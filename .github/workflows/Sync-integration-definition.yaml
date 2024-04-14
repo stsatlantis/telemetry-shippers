@@ -6,7 +6,7 @@ on:
     - 'otel-integration/k8s-helm/Chart.yaml'
   workflow_dispatch:
 jobs:
-  Get_vesrion:
+  Get_version:
     runs-on: ubuntu-latest
     name: Get the new version
     outputs:
@@ -23,7 +23,7 @@ jobs:
           echo "Chart_version=$Chart_version" >> $GITHUB_OUTPUT
   create_pr:
     runs-on: ubuntu-latest
-    needs: Get_vesrion
+    needs: Get_version
     steps:
       - name: Checkout destination repository
         uses: actions/checkout@v3
@@ -36,7 +36,7 @@ jobs:
         run: | 
           branch_name="sync-telemetry-branch-$(date +"%m-%d-%H-%M")"
           git fetch origin
-          template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
+          template_version=${{ needs.Get_version.outputs.Chart_version }}
           if [ -d "./integrations/otel-agent-k8s/v$template_version" ] || [ -n "$(git ls-remote origin $branch_name)" ]; then
             echo "version exist"
             echo "new_version_exist=true" >> $GITHUB_ENV
@@ -59,7 +59,7 @@ jobs:
           git push --set-upstream origin ${branch_name}
 
           current_time=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          template_version=${{ needs.Get_vesrion.outputs.Chart_version }}
+          template_version=${{ needs.Get_version.outputs.Chart_version }}
           mkdir -p integrations/otel-agent-k8s/v${template_version}
           last_version=$(grep  "revision: " ./integrations/otel-agent-k8s/manifest.yaml | tail -n 1 | grep -oE '[^ ]+$')
           cp integrations/otel-agent-k8s/v$last_version/commands.yaml integrations/otel-agent-k8s/v${template_version}/
